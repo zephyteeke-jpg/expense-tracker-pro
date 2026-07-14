@@ -16,6 +16,7 @@ import json
 import csv
 import io
 import os
+import re
 
 app = Flask(__name__)
 
@@ -41,8 +42,25 @@ SUPPORTED_CURRENCIES = {
     },
 }
 
+CURRENCY_ALIASES = {
+    "KSH": "KES",
+    "KES": "KES",
+    "USD": "USD",
+}
+
+
+def normalize_currency_code(currency_code):
+    if not currency_code:
+        return "KES"
+
+    return CURRENCY_ALIASES.get(
+        str(currency_code).strip().upper(),
+        "KES",
+    )
+
 
 def get_currency_details(currency_code):
+    currency_code = normalize_currency_code(currency_code)
     return SUPPORTED_CURRENCIES.get(
         currency_code,
         SUPPORTED_CURRENCIES["KES"],
@@ -52,6 +70,24 @@ def get_currency_details(currency_code):
 def convert_amount(amount, currency_code):
     details = get_currency_details(currency_code)
     return float(amount or 0) * details["rate"]
+
+
+def parse_amount(amount_text):
+    cleaned_amount = re.sub(
+        r"[^\d.\-]",
+        "",
+        str(amount_text or ""),
+    )
+
+    if cleaned_amount in ["", ".", "-", "-."]:
+        raise ValueError
+
+    return float(cleaned_amount)
+
+
+def amount_to_storage_currency(amount, currency_code):
+    details = get_currency_details(currency_code)
+    return float(amount) / details["rate"]
 
 
 @app.template_filter("format_date")
@@ -225,7 +261,7 @@ def register():
         session.clear()
         session["user_id"] = user_id
         session["username"] = username
-        session["currency"] = "KES"
+        session["currency"] = normalize_currency_code("KES")
 
         flash(
             f"Welcome, {username}! Your account is ready.",
@@ -271,7 +307,7 @@ def login():
         session.clear()
         session["user_id"] = user["id"]
         session["username"] = user["username"]
-        session["currency"] = user["currency"] or "KES"
+        session["currency"] = normalize_currency_code(user["currency"])
 
         flash(
             f"Welcome back, {user['username']}!",
@@ -297,7 +333,8 @@ def dashboard():
     search = request.args.get("search", "").strip()
     transaction_type = request.args.get("type", "").strip()
     user_id = session["user_id"]
-    currency_code = session.get("currency", "KES")
+    currency_code = normalize_currency_code(session.get("currency", "KES"))
+    session["currency"] = currency_code
     currency_details = get_currency_details(currency_code)
     currency_symbol = currency_details["symbol"]
     currency_rate = currency_details["rate"]
@@ -479,7 +516,7 @@ def add_transaction():
         amount_text = request.form.get("amount", "").strip()
 
         try:
-            amount = float(amount_text)
+            amount = parse_amount(amount_text)
         except ValueError:
             flash("Please enter a valid amount.", "danger")
             return redirect(url_for("add_transaction"))
@@ -522,7 +559,10 @@ def add_transaction():
                 session["user_id"],
                 title,
                 category,
-                amount,
+                amount_to_storage_currency(
+                    amount,
+                    session.get("currency", "KES"),
+                ),
                 transaction_type,
             ),
         )
@@ -536,7 +576,14 @@ def add_transaction():
         )
         return redirect(url_for("dashboard"))
 
-    return render_template("add.html")
+    currency_code = normalize_currency_code(session.get("currency", "KES"))
+    currency_symbol = get_currency_details(currency_code)["symbol"]
+
+    return render_template(
+        "add.html",
+        currency_code=currency_code,
+        currency_symbol=currency_symbol,
+    )
 
 
 @app.route(
@@ -571,7 +618,7 @@ def edit_transaction(transaction_id):
         amount_text = request.form.get("amount", "").strip()
 
         try:
-            amount = float(amount_text)
+            amount = parse_amount(amount_text)
         except ValueError:
             conn.close()
             flash("Please enter a valid amount.", "danger")
@@ -634,7 +681,10 @@ def edit_transaction(transaction_id):
             (
                 title,
                 category,
-                amount,
+                amount_to_storage_currency(
+                    amount,
+                    session.get("currency", "KES"),
+                ),
                 transaction_type,
                 transaction_id,
                 session["user_id"],
@@ -650,11 +700,22 @@ def edit_transaction(transaction_id):
         )
         return redirect(url_for("dashboard"))
 
+    currency_code = normalize_currency_code(session.get("currency", "KES"))
+    session["currency"] = currency_code
+    currency_symbol = get_currency_details(currency_code)["symbol"]
+    display_amount = convert_amount(
+        transaction["amount"],
+        currency_code,
+    )
+
     conn.close()
 
     return render_template(
         "edit.html",
         transaction=transaction,
+        display_amount=display_amount,
+        currency_code=currency_code,
+        currency_symbol=currency_symbol,
     )
 
 
@@ -849,10 +910,12 @@ def settings():
 
 
         if action == "update_currency":
-            currency_code = request.form.get(
-                "currency",
-                "KES",
-            ).strip().upper()
+            currency_code = normalize_currency_code(
+                request.form.get(
+                    "currency",
+                    "KES",
+                )
+            )
 
             if currency_code not in SUPPORTED_CURRENCIES:
                 conn.close()
@@ -936,10 +999,13 @@ def settings():
     username = user["username"]
     conn.close()
 
+    currency_code = normalize_currency_code(user["currency"])
+    session["currency"] = currency_code
+
     return render_template(
         "settings.html",
         username=username,
-        currency_code=user["currency"] or "KES",
+        currency_code=currency_code,
         usd_kes_rate=USD_KES_RATE,
     )
 
@@ -947,7 +1013,8 @@ def settings():
 @app.route("/export")
 @login_required
 def export_transactions():
-    currency_code = session.get("currency", "KES")
+    currency_code = normalize_currency_code(session.get("currency", "KES"))
+    session["currency"] = currency_code
     currency_details = get_currency_details(currency_code)
 
     conn = get_db()
