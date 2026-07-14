@@ -1,0 +1,159 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Edit Transaction</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+<div class="container py-5">
+
+    <div class="form-card mx-auto">
+
+        <h2 class="mb-4">
+            Edit Transaction
+        </h2>
+
+        <form method="POST">
+
+            <div class="mb-3">
+
+                <label class="form-label">
+                    Title
+                </label>
+
+                <input
+                    type="text"
+                    name="title"
+                    class="form-control"
+                    value="{{ transaction.title }}"
+                    required
+                >
+
+            </div>
+
+            <div class="mb-3">
+
+                <label class="form-label">
+                    Category
+                </label>
+
+                {% set categories = [
+                    "Food",
+                    "Transport",
+                    "Shopping",
+                    "Bills",
+                    "Entertainment",
+                    "Healthcare",
+                    "Education",
+                    "Salary",
+                    "Investment",
+                    "Other"
+                ] %}
+
+                <select
+                    name="category"
+                    class="form-select"
+                    required
+                >
+
+                    {% for category in categories %}
+
+                    <option
+                        value="{{ category }}"
+                        {% if transaction.category == category %}selected{% endif %}
+                    >
+                        {{ category }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <div class="mb-3">
+
+                <label class="form-label">
+                    Amount
+                </label>
+
+                <input
+                    type="number"
+                    name="amount"
+                    class="form-control"
+                    step="0.01"
+                    min="0.01"
+                    value="{{ transaction.amount }}"
+                    required
+                >
+
+            </div>
+
+            <div class="mb-4">
+
+                <label class="form-label">
+                    Type
+                </label>
+
+                <select
+                    name="type"
+                    class="form-select"
+                    required
+                >
+
+                    <option
+                        value="Income"
+                        {% if transaction.type == "Income" %}selected{% endif %}
+                    >
+                        Income
+                    </option>
+
+                    <option
+                        value="Expense"
+                        {% if transaction.type == "Expense" %}selected{% endif %}
+                    >
+                        Expense
+                    </option>
+
+                </select>
+
+            </div>
+
+            <button
+                type="submit"
+                class="btn btn-success w-100 mb-2"
+            >
+                Save Changes
+            </button>
+
+            <a
+                href="{{ url_for('dashboard') }}"
+                class="btn btn-secondary w-100"
+            >
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>
+```

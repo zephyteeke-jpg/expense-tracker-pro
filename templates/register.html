@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account | Expense Tracker Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=3nTw1lDB31EcT2IBWg7rDTAWO87jxc_ZlJY_k1_2ShZ6zQZMc-Aq41EbaL5sjuL-ls8XmjA6n7QiXzw7ETaIcCcPg50_9k4PmnVHRnTpjJtK5SRnH5ri7tZ9VqS1qksSrImRsxfecuVqiqa4iiwAn90zfgG8bvIZ2znbeV0DpclAT_eTz88OTnOS_XhT-ATyFQI_00zrrejelf9xzqPz6nW-YnGgA7kNVD1TbeG7yl6ceucOwWvAA3DXhkVKJceO3VPKLtxjXjg_nsIBP9vWy9VylVj-XIOj8TBxDVgNk4PsAT3pGLV-ZlxqMDxY2EZl" charset="UTF-8"></script></head>
+<body class="auth-page">
+
+<div class="auth-shell">
+    <section class="auth-brand-panel">
+        <span class="auth-eyebrow">BUILD BETTER MONEY HABITS</span>
+        <h1>Your finances deserve a clearer view.</h1>
+        <p>
+            Create your private workspace and turn everyday transactions
+            into useful insights.
+        </p>
+
+        <div class="auth-features">
+            <div><i class="bi bi-person-lock"></i> Private personal account</div>
+            <div><i class="bi bi-pie-chart"></i> Category-based insights</div>
+            <div><i class="bi bi-calendar3"></i> Monthly financial trends</div>
+        </div>
+    </section>
+
+    <section class="auth-form-panel">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <i class="bi bi-person-plus"></i>
+            </div>
+
+            <p class="auth-kicker">GET STARTED</p>
+            <h2>Create your account</h2>
+            <p class="text-secondary">
+                Use your real name as the username you will sign in with.
+            </p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Your name</label>
+                    <input
+                        type="text"
+                        name="username"
+                        class="form-control"
+                        placeholder="e.g. Zephy"
+                        autocomplete="username"
+                        minlength="2"
+                        required
+                    >
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input
+                        type="password"
+                        name="password"
+                        class="form-control"
+                        placeholder="At least 6 characters"
+                        autocomplete="new-password"
+                        minlength="6"
+                        required
+                    >
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Confirm password</label>
+                    <input
+                        type="password"
+                        name="confirm_password"
+                        class="form-control"
+                        placeholder="Enter the password again"
+                        autocomplete="new-password"
+                        minlength="6"
+                        required
+                    >
+                </div>
+
+                <button class="btn btn-success w-100 auth-submit">
+                    <i class="bi bi-person-check me-2"></i>
+                    Create Account
+                </button>
+            </form>
+
+            <p class="auth-switch">
+                Already registered?
+                <a href="{{ url_for('login') }}">Sign in</a>
+            </p>
+        </div>
+    </section>
+</div>
+
+</body>
+</html>
